@@ -344,5 +344,18 @@ describe Chef::Provider::File do
     end
   end
 
-end
+  describe "when destination file is a directory" do
+    before(:each) do
+      testdir = Dir.tmpdir + '/test_something'
+      Dir.mkdir(testdir)
+      @resource.path(testdir)
+    end
 
+    after {FileUtils.rm_rf(Dir.tmpdir + '/test_something')}
+
+    it "should backup the directory then remove and create the file" do
+      @provider.action_create
+    end
+  end
+
+end

@@ -137,6 +137,10 @@ class Chef
       end
 
       def action_create
+        if ::File.directory?(@new_resource.path)
+          backup(@new_resource.path)
+          ::FileUtils.rm_rf(@new_resource.path)
+        end
         unless ::File.exists?(@new_resource.path)
           Chef::Log.info("Creating #{@new_resource} at #{@new_resource.path}")
           ::File.open(@new_resource.path, "w+") { |f| }
@@ -174,11 +178,11 @@ class Chef
       end
 
       def backup(file=nil)
+        time = Time.now
+        savetime = time.strftime("%Y%m%d%H%M%S")
+        backup_filename = "#{@new_resource.path}.chef-#{savetime}"
         file ||= @new_resource.path
         if @new_resource.backup != false && @new_resource.backup > 0 && ::File.exist?(file)
-          time = Time.now
-          savetime = time.strftime("%Y%m%d%H%M%S")
-          backup_filename = "#{@new_resource.path}.chef-#{savetime}"
           # if :file_backup_path is nil, we fallback to the old behavior of
           # keeping the backup in the same directory. We also need to to_s it
           # so we don't get a type error around implicit to_str conversions.

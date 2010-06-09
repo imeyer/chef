@@ -39,6 +39,13 @@ class Chef
       end      
       
       def action_create
+        if ::File.file?(@new_resource.path)
+          time = Time.now
+          savetime = time.strftime("%Y%m%d%H%M%S")
+          backup_filename = "#{@new_resource.path}.chef-#{savetime}"
+          FileUtils.cp(@new_resource.path, backup_filename)
+          FileUtils.rm_f(@new_resource.path)
+        end
         unless ::File.exists?(@new_resource.path)
           Chef::Log.info("Creating #{@new_resource} at #{@new_resource.path}")
           if @new_resource.recursive == true

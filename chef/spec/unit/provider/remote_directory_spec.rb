@@ -128,6 +128,22 @@ describe Chef::Provider::RemoteDirectory do
         ::File.exist?(@destination_dir + '/a/multiply/nested/directory/qux.txt').should be_false
       end
     end
+  end
 
+  describe "when creating a remote directory that is currently a file" do
+    before do
+      @node[:platform] = :just_testing
+      @node[:platform_version] = :just_testing
+
+      FileUtils.touch(Dir.tmpdir + '/remote_directory_test')
+      @destination_dir = Dir.tmpdir + '/remote_directory_test'
+      @resource.path(@destination_dir)
+    end
+
+    after {FileUtils.rm_rf(@destination_dir)}
+
+    it "should remove the file and instead create a directory" do
+      @provider.action_create
+    end
   end
 end
