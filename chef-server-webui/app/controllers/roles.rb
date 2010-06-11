@@ -22,7 +22,9 @@ require 'chef/role'
 class Roles < Application
 
   provides :html
-  before :login_required 
+  before :login_required
+  # Uncomment if you want to enable admin only access to roles
+  # before :is_admin
   
   # GET /roles
   def index

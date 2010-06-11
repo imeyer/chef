@@ -52,9 +52,15 @@ class Application < Merb::Controller
   end
 
 
-  def is_admin(name)
-    user = Chef::WebUIUser.load(name)
-    return user.admin
+  def is_admin
+    @user = Chef::WebUIUser.load(session[:user])
+    if @user.admin
+      Chef::Log.debug("Authorized #{session[:user]} as Administrator")
+      true
+    else
+      Chef::Log.debug("#{session[:user]} is not authorized as an administrator to run #{action_name}")
+      raise AdminAccessRequired
+    end
   end
 
   #return true if there is only one admin left, false otehrwise
@@ -73,17 +79,7 @@ class Application < Merb::Controller
 
   #whether or not the user should be able to edit a user's admin status
   def edit_admin
-    is_admin(params[:user_id]) ? (!is_last_admin) : true
-  end
-
-  def authorized_user
-    if session[:level] == :admin
-      Chef::Log.debug("Authorized as Administrator")
-      true
-    else
-      Chef::Log.debug("Unauthorized")
-      raise Unauthorized, "The current user is not an Administrator, you can only Show and Edit the user itself. To control other users, login as an Administrator."
-    end
+    is_admin ? (!is_last_admin) : true
   end
 
   # Store the URI of the current request in the session.

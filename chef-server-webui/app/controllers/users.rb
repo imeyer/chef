@@ -24,12 +24,12 @@ class Users < Application
 
   provides :html
   before :login_required, :exclude => [:login, :login_exec, :complete]
+  before :is_admin, :exclude => [:login, :login_exec, :complete, :show, :edit, :logout]
   log_params_filtered :password, :password2, :new_password, :confirm_new_password
     
   # List users, only if the user is admin.
   def index
     begin
-      authorized_user
       @users = Chef::WebUIUser.list 
       render
     rescue => e
@@ -41,7 +41,6 @@ class Users < Application
   # Edit user. Admin can edit everyone, non-admin user can only edit itself.
   def edit
     begin
-      raise Forbidden, "The current user is not an Administrator, you can only Show and Edit the user itself. To control other users, login as an Administrator." unless params[:user_id] == session[:user] unless session[:level] == :admin
       @user = Chef::WebUIUser.load(params[:user_id])
       render
     rescue => e
@@ -53,7 +52,6 @@ class Users < Application
   # Show the details of a user. If the user is not admin, only able to show itself; otherwise able to show everyone
   def show
     begin
-      raise Forbidden, "The current user is not an Administrator, you can only Show and Edit the user itself. To control other users, login as an Administrator." unless params[:user_id] == session[:user] unless session[:level] == :admin
       @user = Chef::WebUIUser.load(params[:user_id])
       render
     rescue => e
@@ -96,7 +94,6 @@ class Users < Application
   
   def new
     begin
-      authorized_user
       @user = Chef::WebUIUser.new
       render
     rescue => e
@@ -107,7 +104,6 @@ class Users < Application
 
   def create
     begin
-      authorized_user
       @user = Chef::WebUIUser.new
       @user.name = params[:name]
       @user.set_password(params[:password], params[:password2])
@@ -153,7 +149,7 @@ class Users < Application
   
   def destroy
     begin
-      raise Forbidden, "The last admin user cannot be deleted" if (is_admin(params[:user_id]) && is_last_admin)
+      raise Forbidden, "The last admin user cannot be deleted" if (is_admin && is_last_admin && session[:user] == params[:user_id])
       raise Forbidden, "A non-admin user can only delete itself" if (params[:user_id] != session[:user] && session[:level] != :admin)
       @user = Chef::WebUIUser.load(params[:user_id])
       @user.destroy
