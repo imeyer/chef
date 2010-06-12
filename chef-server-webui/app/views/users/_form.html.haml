@@ -22,10 +22,11 @@
         = password_field :id=>"user_confirm_new_password", :name => "confirm_new_password", :class =>"password_field"
         %span.description Confirm new password for the User. Keep blank if you do not want to change password.
 
-      - if session[:level] == :admin && edit_admin
+      - if session[:level] == :admin && is_admin
         %div.group.form
           %label.label Admin
-          = text_field :id => "user_admin", :name => "admin", :class => "text_field", :value => @user.admin
+          = check_box :name => :admin, :id => 'user_admin', :boolean => false, :checked => @user.admin
+          -# :id => "user_admin", :name => "admin", :value => "true", :checked => @user.admin
           %span.description Whether or not the User is an admin. 
       
       %div.group.form

@@ -65,9 +65,9 @@ class Users < Application
     begin
       @user = Chef::WebUIUser.load(params[:user_id])
       
-      if session[:level] == :admin and ['true','false'].include? params[:admin]
-        @user.admin = str_to_bool(params[:admin])
-      end
+      #if session[:level] == :admin and ['true','false'].include? params[:admin]
+      #  @user.admin = params[:admin] =~ /1/ ? true : false
+      #end
 
       if params[:user_id] == session[:user] && params[:admin] == 'false'
         session[:level] = :user
@@ -82,12 +82,14 @@ class Users < Application
       else
         @user.set_openid(URI.parse(params[:openid]).normalize.to_s)
       end
+      raise
       @user.save
-      @_message = { :notice => "Updated User #{@user.name}" }
+      @_message = { :notice => "Updated user #{@user.name}." }
       render :show
     rescue => e
       Chef::Log.error("#{e}\n#{e.backtrace.join("\n")}")
-      @_message = { :error => "Could not update user" }
+      @u = Chef::WebUIUser.load(params[:user_id])
+      @_message = { :error => "Could not update user #{@user.name}. <br />is: #{@u.admin}<br />should be: #{params[:admin]}<br />params: #{params.inspect}" }
       render :edit
     end
   end
