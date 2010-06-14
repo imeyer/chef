@@ -46,7 +46,7 @@ class Chef
       load_commands
       @sub_classes.keys.sort.each do |snake_case|
         klass_instance = build_sub_class(snake_case) 
-        klass_instance.parse_options
+        klass_instance.parse_options([])
         puts klass_instance.opt_parser
         puts
       end
@@ -96,6 +96,14 @@ class Chef
       klass_instance.name_args = extra.inject([]) { |c, i| cli_bits.include?(i) ? cli_bits.delete(i) : c << i; c } 
       klass_instance.configure_chef
       klass_instance
+    end
+
+    def parse_options(args)
+      super
+    rescue OptionParser::InvalidOption => e
+      puts "Error: " + e.to_s
+      show_usage
+      exit(1)
     end
 
     def ask_question(question, opts={})
@@ -159,17 +167,17 @@ class Chef
     def output(data)
       case config[:format]
       when "json", nil
-        puts JSON.pretty_generate(data)
+        stdout.puts JSON.pretty_generate(data)
       when "yaml"
         require 'yaml'
-        puts YAML::dump(data)
+        stdout.puts YAML::dump(data)
       when "text"
         # If you were looking for some attribute and there is only one match
         # just dump the attribute value
         if data.length == 1 and config[:attribute]
-          puts data.values[0]
+          stdout.puts data.values[0]
         else
-          pp data
+          PP.pp(data, stdout)
         end
       else
         raise ArgumentError, "Unknown output format #{config[:format]}"
@@ -224,10 +232,11 @@ class Chef
       parse_output ? JSON.parse(output) : output
     end
 
-    def confirm(question)
+    def confirm(question, append_instructions=true)
       return true if config[:yes]
 
-      print "#{question}? (Y/N) "
+      print question
+      print "? (Y/N) " if append_instructions
       answer = stdin.readline
       answer.chomp!
       case answer
@@ -241,6 +250,10 @@ class Chef
         Chef::Log.error("Just say Y or N, please.")
         confirm(question)
       end
+    end
+
+    def show_usage
+      stdout.puts("USAGE: " + self.opt_parser.to_s)
     end
 
     def load_from_file(klass, from_file, bag=nil) 

@@ -1,14 +1,14 @@
 #
-# Author:: Daniel Deleo (<dan@opscode.com>)
+# Author:: Daniel DeLeo (<dan@opscode.com>)
 # Copyright:: Copyright (c) 2010 Opscode, Inc.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,17 @@
 # limitations under the License.
 #
 
-module ChefServer
-  VERSION = '0.9.0.b02'
+require 'chef/knife'
+class Chef::Knife::RecipeList < Chef::Knife
+  
+  banner "Sub-Command: recipe list [PATTERN]"
+
+  def run
+    recipes = rest.get_rest('cookbooks/_recipes')
+    if pattern = @name_args.first
+      recipes = recipes.grep(Regexp.new(pattern))
+    end
+    output(recipes)
+  end
+
 end
