@@ -26,18 +26,31 @@ class Chef
 
       banner "Sub-Command: data bag from file BAG FILE (options)"
 
-      def run 
-        updated = load_from_file(Chef::DataBagItem, @name_args[1], @name_args[0])
-        dbag = Chef::DataBagItem.new
-        dbag.data_bag(@name_args[0])
-        dbag.raw_data = updated
-        dbag.save
-        Chef::Log.info("Updated data_bag_item[#{@name_args[1]}]")
+      def run
+        @data_bag_name, @data_bag_item_file = @name_args
+        @data_bag_item_name = @data_bag_item_file.split('.')[0]
+
+        if @data_bag_name.nil?
+          show_usage
+          Chef::Log.fatal("You must specify a data bag name")
+          exit 1
+        end
+
+        begin
+          Chef::DataBagItem.load(@data_bag_name, @data_bag_item_name)
+        rescue Net::HTTPServerException => e
+          raise unless e.to_s =~ /^404/
+
+          rest.post_rest("data", { "name" => @data_bag_name })
+          Chef::Log.info("Created data_bag[#{@data_bag_name}]")
+        end
+
+        data_bag_data = load_from_file(Chef::DataBagItem, @data_bag_item_file, @data_bag_name)
+
+        rest.put_rest("data/#{@data_bag_name}/#{@data_bag_item_name}", data_bag_data)
+
+        Chef::Log.info("Updated data_bag_item[#{@data_bag_name}]")
       end
     end
   end
 end
-
-
-
-
